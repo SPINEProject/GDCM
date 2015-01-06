@@ -515,7 +515,7 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
   //os <<"\"("<< t.tags[0] <<", "<<t.tags[1]<<")\" : ";
   //os << vr_read << " ";
 
-//  if(t == Tag(0x0019, 0x1282)){
+//  if(t == Tag(0x2005, 0x140e)){
 //      int temp = 0;
 //      temp += temp+1;
 //  }
@@ -688,11 +688,11 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
         {
         if( vl_read.IsUndefined() )
           {
-          //os << "(Sequence with undefined length)[";
+            //os << "\"(Sequence with undefined length)\"";
           }
         else
           {
-          //os << "(Sequence with defined length)[";
+            //os << "\"(Sequence with defined length)\"";
           }
         }
       break;
@@ -730,10 +730,15 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
 
 void PrinterJSON::PrintSQ(const SequenceOfItems *sqi, std::ostream & os, std::string const & indent)
 {
-  if( !sqi ) return;
+  if( !sqi ){
+      os<<"\"(no value)\"";
+      return;
+  }
   int length = sqi->Items.size();
   int num = 0;
-  if(length > 1){
+  if(length == 0){
+      os<<"\"(no value)\"";
+  }else if(length > 1){
       os<<"[\n";
   }
   SequenceOfItems::ItemVector::const_iterator it = sqi->Items.begin();
