@@ -515,9 +515,10 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
   //os <<"\"("<< t.tags[0] <<", "<<t.tags[1]<<")\" : ";
   //os << vr_read << " ";
 
-  //if(t == Tag(0x0051, 0x1006)){
-  //    os<<t;
-  //}
+//  if(t == Tag(0x0019, 0x1282)){
+//      int temp = 0;
+//      temp += temp+1;
+//  }
 
   //VR refvr = GetRefVR(dicts, de);
   VR refvr;

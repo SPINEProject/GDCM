@@ -227,7 +227,7 @@ public:
   void PrintPNXML(std::ostream &os) const;
   void PrintASCIIXML(std::ostream &os) const;
   void PrintASCIIJSON(std::ostream &os ) const;
-  bool isFloat(std::string& s) const;
+  bool isFloat(std::string& s, float &f) const;
   void PrintHexXML(std::ostream &os) const;
 protected:
   void Print(std::ostream &os) const {

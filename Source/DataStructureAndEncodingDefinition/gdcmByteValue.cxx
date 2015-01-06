@@ -316,8 +316,14 @@ namespace gdcm
         }
         std::string res = "";
         for(int i = 0; i< vect.size(); i++){
-            if(isFloat(vect[i])){
-                res+=vect[i];
+            float v;
+            if(isFloat(vect[i], v)){
+                if(ceil(v) == v && floor(v) == v){
+                    int t = (int)v;
+                    res+= std::to_string(t);
+                }else{
+                    res+= std::to_string(v);
+                }
             }else{
                 res+= "\"" + vect[i] + "\"";
             }
@@ -331,15 +337,14 @@ namespace gdcm
         }
     }else{
         try{
-            if(isFloat(s)){
-                double v = atof(s.c_str());
+            float v;
+            if(isFloat(s, v)){
                 if(ceil(v) == v && floor(v) == v){
                     int t = (int)v;
                     os<<t;
                 }else{
                     os<<std::setprecision( 6 )<<v;
                 }
-
             }else{
                 os<<"\""<<s<<"\"";
             }
@@ -352,13 +357,13 @@ namespace gdcm
 
   }
 
-bool ByteValue::isFloat( std::string& s ) const {
+bool ByteValue::isFloat( std::string& s, float& f ) const {
     //Delete all empty spaces from end
     s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
     //Delete all empty spaces from begin
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
     std::istringstream iss(s);
-    float f;
+
     iss >> std::noskipws >> f; // noskipws considers leading whitespace invalid
     // Check the entire string was consumed and if either failbit or badbit is set
     return iss.eof() && !iss.fail();
