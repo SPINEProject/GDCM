@@ -318,12 +318,14 @@ namespace gdcm
         for(int i = 0; i< vect.size(); i++){
             float v;
             if(isFloat(vect[i], v)){
+                std::ostringstream os ;
                 if(ceil(v) == v && floor(v) == v){
                     int t = (int)v;
-                    res+= std::to_string(t);
+                    os << t ;
                 }else{
-                    res+= std::to_string(v);
+                    os << v ;
                 }
+                res+= os.str();
             }else{
                 res+= "\"" + vect[i] + "\"";
             }
