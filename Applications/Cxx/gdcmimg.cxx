@@ -133,7 +133,7 @@ static void PrintHelp()
   std::cout << "     --endian %s       Endianness (LSB/MSB)." << std::endl;
   std::cout << "  -d --depth %d        Depth (Either 8/16/32 or BitsAllocated eg. 12 when known)." << std::endl;
   std::cout << "     --sign %s         Pixel sign (0/1)." << std::endl;
-  std::cout << "     --spp  %d         Sample Per Pixel (1/3)." << std::endl;
+  std::cout << "     --spp  %d         Sample Per Pixel (1/3/4)." << std::endl;
   std::cout << "     --pc [01]         Change planar configuration." << std::endl;
   std::cout << "     --pi [str]        Change photometric interpretation." << std::endl;
   std::cout << "     --pf %d,%d,%d     Change pixel format: (BA,BS,HB)." << std::endl;
@@ -257,10 +257,12 @@ static bool AddUIDs(int sopclassuid, std::string const & sopclass, std::string c
     std::cerr << "problem with media storage: " << sopclass << std::endl;
     return false;
     }
-  gdcm::DataElement de( gdcm::Tag(0x0008, 0x0016 ) );
-  de.SetByteValue( msstr, (uint32_t)strlen(msstr) );
-  de.SetVR( gdcm::Attribute<0x0008, 0x0016>::GetVR() );
-  ds.Insert( de );
+  {
+    gdcm::DataElement de( gdcm::Tag(0x0008, 0x0016 ) );
+    de.SetByteValue( msstr, (uint32_t)strlen(msstr) );
+    de.SetVR( gdcm::Attribute<0x0008, 0x0016>::GetVR() );
+    ds.Insert( de );
+  }
 
     {
     gdcm::DataElement de( gdcm::Tag(0x0020,0x000d) ); // Study
@@ -791,7 +793,7 @@ int main (int argc, char *argv[])
     }
   if( spp )
     {
-    if( pixelspp != 1 && pixelspp != 3 ) return 1;
+    if( pixelspp != 1 && pixelspp != 3 && pixelspp != 4 ) return 1;
     }
   if( pconf != 0 && pconf != 1 ) return 1;
   if( pconf )
@@ -816,7 +818,7 @@ int main (int argc, char *argv[])
   if( pinter )
     {
     refpi = gdcm::PhotometricInterpretation::GetPIType( pinterstr.c_str() );
-    if( refpi == gdcm::PhotometricInterpretation::UNKNOW
+    if( refpi == gdcm::PhotometricInterpretation::UNKNOWN
       || refpi == gdcm::PhotometricInterpretation::PI_END )
       {
       std::cerr << "Invalid PI: " << pinterstr << std::endl;

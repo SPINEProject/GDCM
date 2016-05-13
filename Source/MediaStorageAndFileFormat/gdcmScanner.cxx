@@ -156,6 +156,7 @@ bool Scanner::Scan( Directory::FilenamesType const & filenames )
         Scanner::ProcessPublicTag(sf, filename);
         //Scanner::ProcessPrivateTag(sf, filename);
         }
+      // Update progress
       Progress += progresstick;
       ProgressEvent pe;
       pe.SetProgress( Progress );

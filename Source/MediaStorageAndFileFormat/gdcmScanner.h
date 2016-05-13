@@ -70,7 +70,7 @@ public:
   //typedef TagToStringMap TagToValue;
   typedef TagToValue::value_type TagToValueValueType;
 
-  /// Add a tag that will need to be read. Those are root level skip tags
+  /// Add a tag that will need to be read. Those are root level tags
   void AddTag( Tag const & t );
   void ClearTags();
 
@@ -178,7 +178,7 @@ inline std::ostream& operator<<(std::ostream &os, const Scanner &s)
   return os;
 }
 
-#if defined(SWIGPYTHON) || defined(SWIGCSHARP) || defined(SWIGJAVA)
+#if defined(SWIGPYTHON) || defined(SWIGCSHARP) || defined(SWIGJAVA) || defined(SWIGPHP)
 /*
  * HACK: I need this temp class to be able to manipulate a std::map from python,
  * swig does not support wrapping of simple class like std::map...

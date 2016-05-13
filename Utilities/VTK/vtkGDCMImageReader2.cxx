@@ -49,7 +49,7 @@
 
 #include <sstream>
 
-vtkCxxRevisionMacro(vtkGDCMImageReader2, "$Revision: 1.1 $")
+//vtkCxxRevisionMacro(vtkGDCMImageReader2, "$Revision: 1.1 $")
 vtkStandardNewMacro(vtkGDCMImageReader2)
 
 static inline bool vtkGDCMImageReader2_IsCharTypeSigned()
@@ -294,6 +294,8 @@ int vtkGDCMImageReader2::RequestInformation(vtkInformation *request,
                                       vtkInformationVector **inputVector,
                                       vtkInformationVector *outputVector)
 {
+  (void)request;
+  (void)inputVector;
   int res = RequestInformationCompat();
   if( !res )
     {
@@ -457,7 +459,7 @@ int vtkGDCMImageReader2::RequestInformationCompat()
     return 0;
     }
   // I do not think this is a good idea anyway to let the user decide
-  // wether or not she wants *not* to apply shift/scale...
+  // whether or not she wants *not* to apply shift/scale...
   if( !this->ApplyShiftScale )
   {
     vtkErrorMacro("ApplyShiftScale not compatible" );
@@ -906,7 +908,11 @@ int vtkGDCMImageReader2::LoadSingleFile(const char *filename, char *pointer, uns
     {
     /*  image.GetBuffer(pointer); */
     bool b = reader.ReadIntoBuffer(pointer, len);
-    assert( b );
+    if( !b )
+    {
+      vtkErrorMacro( "Could not ReadIntoBuffer" );
+      return 0;
+    }
     }
 
   // Do the Icon Image:

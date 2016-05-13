@@ -13,7 +13,7 @@
 =========================================================================*/
 #include "gdcmSequenceOfItems.h"
 
-namespace gdcm
+namespace gdcm_ns
 {
 
 void SequenceOfItems::AddItem(Item const &item)
@@ -27,7 +27,7 @@ void SequenceOfItems::AddItem(Item const &item)
 
 Item & SequenceOfItems::AddNewUndefinedLengthItem()
 {
-	gdcm::Item itemToAdd ;
+	Item itemToAdd ;
 	itemToAdd.SetVLToUndefined();
 	this->AddItem( itemToAdd );
 	return GetItem( this->GetNumberOfItems() );
@@ -84,4 +84,4 @@ bool SequenceOfItems::FindDataElement(const Tag &t) const
   return found;
 }
 
-} // end namespace gdcm
+} // end namespace gdcm_ns

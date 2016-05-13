@@ -33,6 +33,8 @@ endif()
 
 set(EXAMPLES_SRCS
   MakeTemplate
+  DeriveSeries
+  FixOrientation
   DumpGEMSMovieGroup
   QIDO-RS
   DumpExamCard
@@ -40,6 +42,7 @@ set(EXAMPLES_SRCS
   ExtractIconFromFile
   CreateJPIPDataSet
   DumpADAC
+  DumpToshibaDTI
   DumpImageHeaderInfo
   ReadMultiTimesException
   pmsct_rgb1

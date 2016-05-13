@@ -80,6 +80,7 @@ public class";
 #include "gdcmSwapCode.h"
 #include "gdcmEvent.h"
 #include "gdcmProgressEvent.h"
+#include "gdcmFileNameEvent.h"
 #include "gdcmAnonymizeEvent.h"
 #include "gdcmDirectory.h"
 #ifdef GDCM_BUILD_TESTING
@@ -136,6 +137,7 @@ public class";
 #include "gdcmUUIDGenerator.h"
 //#include "gdcmConstCharWrapper.h"
 #include "gdcmScanner.h"
+#include "gdcmStrictScanner.h"
 #include "gdcmAttribute.h"
 #include "gdcmSubject.h"
 #include "gdcmCommand.h"
@@ -237,6 +239,7 @@ public class";
 #include "gdcmBoxRegion.h"
 #include "gdcmImageRegionReader.h"
 #include "gdcmJSON.h"
+#include "gdcmFileDecompressLookupTable.h"
 
 using namespace gdcm;
 %}
@@ -318,6 +321,12 @@ EXTEND_CLASS_PRINT(gdcm::PrivateTag)
     return dynamic_cast<ProgressEvent*>(event);
   }
 };
+%include "gdcmFileNameEvent.h"
+%extend gdcm::FileNameEvent {
+  static FileNameEvent *Cast(Event *event) {
+    return dynamic_cast<FileNameEvent*>(event);
+  }
+};
 //%feature("director") AnonymizeEvent;
 %include "gdcmAnonymizeEvent.h"
 %extend gdcm::AnonymizeEvent {
@@ -348,13 +357,14 @@ EXTEND_CLASS_PRINT(gdcm::VM)
 %template (FilenamesType) std::vector<std::string>;
 %include "gdcmDirectory.h"
 EXTEND_CLASS_PRINT(gdcm::Directory)
+%clear FilenamesType;
 %include "gdcmObject.h"
 %include "gdcmValue.h"
 EXTEND_CLASS_PRINT(gdcm::Value)
 // Array marshaling for arrays of primitives
 %define %cs_marshal_array(TYPE, CSTYPE)
        %typemap(ctype)  TYPE[] "void*"
-       %typemap(imtype, inattributes="[MarshalAs(UnmanagedType.LPArray)]") TYPE[] "CSTYPE[]"
+       %typemap(imtype, inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]") TYPE[] "CSTYPE[]"
        %typemap(cstype) TYPE[] "CSTYPE[]"
        %typemap(in)     TYPE[] %{ $1 = (TYPE*)$input; %}
        %typemap(csin)   TYPE[] "$csinput"
@@ -423,10 +433,8 @@ EXTEND_CLASS_PRINT(gdcm::DataElement)
 
 %include "gdcmItem.h"
 EXTEND_CLASS_PRINT(gdcm::Item)
-/*
- The following line is very important it properly convert :
-SWIGTYPE_p_std__vectorT_int_t__size_type -> uint
-*/
+// The following line is very important it properly convert :
+// SWIGTYPE_p_std__vectorT_int_t__size_type -> uint
 %template() std::vector< gdcm::Item >;
 %include "gdcmSequenceOfItems.h"
 EXTEND_CLASS_PRINT(gdcm::SequenceOfItems)
@@ -435,6 +443,7 @@ EXTEND_CLASS_PRINT(gdcm::SequenceOfItems)
 %include "gdcmDataSet.h"
 EXTEND_CLASS_PRINT(gdcm::DataSet)
 //%include "gdcmString.h"
+//%include "gdcmCodeString.h"
 //%include "gdcmTransferSyntax.h"
 %include "gdcmPhotometricInterpretation.h"
 EXTEND_CLASS_PRINT(gdcm::PhotometricInterpretation)
@@ -531,6 +540,8 @@ EXTEND_CLASS_PRINT(gdcm::Pixmap)
 EXTEND_CLASS_PRINT(gdcm::Image)
 %include "gdcmFragment.h"
 EXTEND_CLASS_PRINT(gdcm::Fragment)
+// convert SWIGTYPE_p_std__vectorT_gdcm__Fragment_t__size_type
+%template() std::vector< gdcm::Fragment >;
 %include "gdcmPDBElement.h"
 EXTEND_CLASS_PRINT(gdcm::PDBElement)
 %include "gdcmPDBHeader.h"
@@ -594,6 +605,9 @@ EXTEND_CLASS_PRINT(gdcm::Dicts)
 %template(SmartPtrScan) gdcm::SmartPointer<gdcm::Scanner>;
 %include "gdcmScanner.h"
 EXTEND_CLASS_PRINT(gdcm::Scanner)
+%template(SmartPtrStrictScan) gdcm::SmartPointer<gdcm::StrictScanner>;
+%include "gdcmStrictScanner.h"
+EXTEND_CLASS_PRINT(gdcm::StrictScanner)
 
 %template(SmartPtrAno) gdcm::SmartPointer<gdcm::Anonymizer>;
 //%ignore gdcm::Anonymizer::Anonymizer;
@@ -856,3 +870,4 @@ EXTEND_CLASS_PRINT(gdcm::BoxRegion)
 %include "gdcmImageRegionReader.h"
 %clear char* inreadbuffer;
 %include "gdcmJSON.h"
+%include "gdcmFileDecompressLookupTable.h"

@@ -22,7 +22,7 @@
 
 #include <set>
 
-namespace gdcm
+namespace gdcm_ns
 {
 // Data Element
 // Contains multiple fields:
@@ -91,7 +91,7 @@ public:
   }
 
   /// Set/Get Value (bytes array, SQ of items, SQ of fragments):
-  Value const &GetValue() const { return *ValueField; }
+  Value const &GetValue() const { gdcmAssertAlwaysMacro(ValueField); return *ValueField; }
   Value &GetValue() { return *ValueField; }
   /// \warning you need to set the ValueLengthField explicitly
   void SetValue(Value const & vl) {
@@ -272,6 +272,6 @@ inline bool operator!=(const DataElement& lhs, const DataElement& rhs)
   return ! ( lhs == rhs );
 }
 
-} // end namespace gdcm
+} // end namespace gdcm_ns
 
 #endif //GDCMDATAELEMENT_H

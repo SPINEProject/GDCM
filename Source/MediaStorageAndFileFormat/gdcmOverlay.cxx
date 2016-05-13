@@ -99,6 +99,13 @@ Overlay::Overlay(Overlay const &ov):Object(ov)
   *Internal = *ov.Internal;
 }
 
+Overlay & Overlay::operator=(Overlay const &ov)
+{
+  assert( Internal );
+  *Internal = *ov.Internal;
+  return *this;
+}
+
 void Overlay::Update(const DataElement & de)
 {
 /*
@@ -263,6 +270,7 @@ bool Overlay::GrabOverlayFromPixelData(DataSet const &ds)
     if( !bv )
       {
       // XA_GE_JPEG_02_with_Overlays.dcm
+      gdcmWarningMacro("Could not extract overlay from encapsulated stream." );
       return false;
       }
     assert( bv );
@@ -276,6 +284,7 @@ bool Overlay::GrabOverlayFromPixelData(DataSet const &ds)
     assert( 8 * ovlength == (unsigned int)Internal->Rows * Internal->Columns );
     if( Internal->Data.empty() )
       {
+      gdcmWarningMacro("Internal Data is empty." );
       return false;
       }
     unsigned char * overlay = (unsigned char*)&Internal->Data[0];
@@ -343,7 +352,7 @@ Overlay::OverlayType Overlay::GetOverlayTypeFromString(const char *s)
       }
     }
   // could not find the proper type, maybe padded with \0 ?
-  if( strlen(s) == 1 )
+  if( s && strlen(s) == 1 )
     {
     for( int i = 0; i < n; ++i )
       {

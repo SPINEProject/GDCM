@@ -35,6 +35,11 @@
   #endif
 #endif
 
+#if defined(GDCM_OVERRIDE_BROKEN_IMPLEMENTATION) && !defined(GDCM_FORCE_EXPORT)
+#undef GDCM_EXPORT
+#define GDCM_EXPORT
+#endif
+
 // In VTK 4.2 vtkWrapPython does not like anything other than VTK_*EXPORT
 // [ 86%] Generating vtkGDCMImageReaderPython.cxx
 // syntax error
@@ -67,16 +72,6 @@
 #pragma warning ( disable : 4786 )
 //'identifier' : decorated name length exceeded, name was truncated
 #pragma warning ( disable : 4503 )
-// C++ exception specification ignored except to indicate a
-// function is not __declspec(nothrow)
-//#pragma warning ( disable : 4290 )
-// signed/unsigned mismatch
-#pragma warning ( disable : 4018 )
-// return type for 'identifier' is '' (ie; not a UDT or reference to UDT. Will
-// produce errors if applied using infix notation
-//#pragma warning ( disable : 4284 )
-// 'type' : forcing value to bool 'true' or 'false' (performance warning)
-// //#pragma warning ( disable : 4800 )
 #endif //_MSC_VER
 
 //-----------------------------------------------------------------------------

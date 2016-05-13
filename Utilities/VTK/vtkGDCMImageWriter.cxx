@@ -47,7 +47,7 @@
 
 #include <limits>
 
-vtkCxxRevisionMacro(vtkGDCMImageWriter, "$Revision: 1.1 $")
+//vtkCxxRevisionMacro(vtkGDCMImageWriter, "$Revision: 1.1 $")
 vtkStandardNewMacro(vtkGDCMImageWriter)
 
 //vtkCxxSetObjectMacro(vtkGDCMImageWriter,LookupTable,vtkLookupTable)
@@ -66,7 +66,7 @@ inline bool vtkGDCMImageWriter_IsCharTypeSigned()
 }
 
 #ifndef vtkFloatingPointType
-#define vtkFloatingPointType float
+#define vtkFloatingPointType double
 #endif
 
 //----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ int vtkGDCMImageWriter::RequestInformation(
   vtkInformationVector *vtkNotUsed(outputVector))
 {
   // Check to make sure that all input information agrees
-  int mismatchedInputs = 0;
+  //int mismatchedInputs = 0;
 
   double spacing[3];
   double origin[3];
@@ -179,7 +179,7 @@ int vtkGDCMImageWriter::RequestInformation(
           != components ||
         inInfo->Get(vtkDataObject::FIELD_ARRAY_TYPE()) != dataType)
       {
-      mismatchedInputs = 1;
+      //mismatchedInputs = 1;
       return 0;
       }
     }

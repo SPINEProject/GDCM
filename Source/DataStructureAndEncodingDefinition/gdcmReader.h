@@ -18,7 +18,7 @@
 
 #include <fstream>
 
-namespace gdcm
+namespace gdcm_ns
 {
   class StreamImageReader;
 /**
@@ -53,10 +53,7 @@ namespace gdcm
 class GDCM_EXPORT Reader
 {
 public:
-  Reader():F(new File){
-    Stream = NULL;
-    Ifstream = NULL;
-  }
+  Reader();
   virtual ~Reader();
 
   /// Main function to read a file
@@ -94,9 +91,6 @@ public:
   /// \warning need to call either SetFileName or SetStream first
   bool CanRead() const;
 
-  /// Set/Get DataSet StreamPosition ;
-  std::streampos GetDSStreamPosition() { return m_posDataSet ; }
-
   /// For wrapped language. return type is compatible with System::FileSize return type
   /// Use native std::streampos / std::streamoff directly from the stream from C++
   size_t GetStreamCurrentPosition() const;
@@ -120,13 +114,12 @@ protected:
   //will still have to be subject to endianness swaps, if necessary.
   std::istream* GetStreamPtr() const { return Stream; }
 
-protected:
+private:
   template <typename T_Caller>
   bool InternalReadCommon(const T_Caller &caller);
   TransferSyntax GuessTransferSyntax();
   std::istream *Stream;
   std::ifstream *Ifstream;
-  std::streampos m_posDataSet ;
 };
 
 /**
@@ -135,7 +128,7 @@ protected:
  * This is a C++ example on how to use gdcm::Reader
  */
 
-} // end namespace gdcm
+} // end namespace gdcm_ns
 
 
 #endif //GDCMREADER_H

@@ -64,6 +64,7 @@ bool ImageChangePhotometricInterpretation::ChangeMonochrome()
 
   //ImageCodec ic;
   RAWCodec ic;
+  ic.SetPixelFormat(image.GetPixelFormat());
   std::ostringstream os;
   ic.DoInvertMonochrome( is, os );
 
@@ -107,6 +108,7 @@ bool ImageChangePhotometricInterpretation::Change()
     CR = + .5000R - .4187G - .0813B + 128
     Note: The above is based on CCIR Recommendation 601-2 dated 1990.
     */
+    return false;
     }
   else if( PI == PhotometricInterpretation::RGB )
     {
@@ -117,18 +119,14 @@ bool ImageChangePhotometricInterpretation::Change()
      * 1.0000e+00   -3.4411e-01   -7.1410e-01
      * 1.0000e+00    1.7720e+00   -1.3458e-04
      */
-
+    return false;
     }
   else if( PI == PhotometricInterpretation::MONOCHROME1 || PI == PhotometricInterpretation::MONOCHROME2 )
     {
     return ChangeMonochrome();
     }
-  else
-    {
-    return false;
-    }
-
-  return true;
+  //else
+  return false;
 }
 
 

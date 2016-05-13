@@ -22,6 +22,10 @@
 // CharLS includes
 #include "gdcm_charls.h"
 
+#if defined(__GNUC__) && GCC_VERSION < 50101
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+
 namespace gdcm
 {
 
@@ -166,6 +170,7 @@ bool JPEGLSCodec::DecodeByStreamsCommon(char *buffer, size_t totalLen, std::vect
 
   if (result != OK)
     {
+    gdcmErrorMacro( "Could not decode JPEG-LS stream" );
     return false;
     }
 
@@ -449,6 +454,12 @@ bool JPEGLSCodec::DecodeExtent(
     const unsigned int colsize = ymax - ymin + 1;
     const unsigned int bytesPerPixel = pf.GetPixelSize();
 
+    if( outv.size() != dimensions[0] * dimensions[1] * bytesPerPixel )
+    {
+       gdcmDebugMacro( "Inconsistant buffer size. Giving up" );
+       return false;
+    }
+
     const unsigned char *tmpBuffer1 = raw;
     unsigned int z = 0;
     for (unsigned int y = ymin; y <= ymax; ++y)
@@ -472,7 +483,7 @@ bool JPEGLSCodec::DecodeExtent(
       //std::streamoff relstart = is.tellg();
       //assert( relstart - thestart == 8 );
       std::streamoff off = frag.GetVL();
-      offsets.push_back( off );
+      offsets.push_back( (size_t)off );
       is.seekg( off, std::ios::cur );
       ++numfrags;
       }
@@ -486,7 +497,7 @@ bool JPEGLSCodec::DecodeExtent(
 
     for( unsigned int z = zmin; z <= zmax; ++z )
       {
-      size_t curoffset = std::accumulate( offsets.begin(), offsets.begin() + z, 0 );
+      size_t curoffset = std::accumulate( offsets.begin(), offsets.begin() + z, size_t(0) );
       is.seekg( thestart + curoffset + 8 * z, std::ios::beg );
       is.seekg( 8, std::ios::cur );
 
@@ -504,6 +515,12 @@ bool JPEGLSCodec::DecodeExtent(
       const unsigned int rowsize = xmax - xmin + 1;
       const unsigned int colsize = ymax - ymin + 1;
       const unsigned int bytesPerPixel = pf.GetPixelSize();
+
+      if( outv.size() != dimensions[0] * dimensions[1] * bytesPerPixel )
+      {
+         gdcmDebugMacro( "Inconsistant buffer size. Giving up" );
+         return false;
+      }
 
       const unsigned char *tmpBuffer1 = raw;
       for (unsigned int y = ymin; y <= ymax; ++y)
@@ -547,7 +564,7 @@ bool JPEGLSCodec::AppendRowEncode( std::ostream & , const char * , size_t )
 bool JPEGLSCodec::AppendFrameEncode( std::ostream & out, const char * data, size_t datalen )
 {
   const unsigned int * dimensions = this->GetDimensions();
-  const PixelFormat & pf = this->GetPixelFormat();
+  const PixelFormat & pf = this->GetPixelFormat(); (void)pf;
   assert( datalen == dimensions[0] * dimensions[1] * pf.GetPixelSize() );
 
   std::vector<BYTE> rgbyteCompressed;

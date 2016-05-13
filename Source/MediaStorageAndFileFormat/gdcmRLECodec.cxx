@@ -503,7 +503,9 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
         ptrdiff_t llength = rle_encode(outbuf, n, ptr + y*dims[0], partition / dims[1] /*image_len*/);
         if( llength < 0 )
           {
-          std::cerr << "RLE compressor error" << std::endl;
+          gdcmErrorMacro( "RLE compressor error" );
+          delete[] buffer;
+          delete[] bufferrgb;
           return false;
           }
         assert( llength );
@@ -528,18 +530,10 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
     frag.SetByteValue( &str[0], strSize );
     sq->AddFragment( frag );
     }
-
   out.SetValue( *sq );
 
-  if( buffer /*GetPixelFormat().GetBitsAllocated() > 8*/ )
-    {
-    //RequestPaddedCompositePixelCode = true;
-    delete[] buffer;
-    }
-  if ( bufferrgb /*GetPhotometricInterpretation() == PhotometricInterpretation::RGB*/ )
-    {
-    delete[] bufferrgb;
-    }
+  delete[] buffer;
+  delete[] bufferrgb;
 
   return true;
 }
@@ -557,7 +551,7 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
 // Endif
 // Endloop
 
-size_t RLECodec::DecodeFragment(Fragment const & frag, char *buffer, unsigned long llen)
+size_t RLECodec::DecodeFragment(Fragment const & frag, char *buffer, size_t llen)
 {
 
   std::stringstream is;
@@ -568,14 +562,13 @@ size_t RLECodec::DecodeFragment(Fragment const & frag, char *buffer, unsigned lo
   is.write(mybuffer, bv.GetLength());
   delete[] mybuffer;
   std::stringstream os;
-  SetLength( llen );
+  SetLength( (unsigned long)llen );
 #if !defined(NDEBUG)
   const unsigned int * const dimensions = this->GetDimensions();
   const PixelFormat & pf = this->GetPixelFormat();
   assert( llen == dimensions[0] * dimensions[1] * pf.GetPixelSize() );
 #endif
   bool r = DecodeByStreams(is, os);
-  assert( r == true );
   (void)r; //warning removal
   std::streampos p = is.tellg();
   // http://groups.google.com/group/microsoft.public.vc.stl/browse_thread/thread/96740930d0e4e6b8
@@ -585,8 +578,8 @@ size_t RLECodec::DecodeFragment(Fragment const & frag, char *buffer, unsigned lo
     // which is discarded
     std::streamoff check = bv.GetLength() - p;
     // check == 2 for gdcmDataExtra/gdcmSampleData/US_DataSet/GE_US/2929J686-breaker
-    assert( check == 0 || check == 1 || check == 2 );
-    if( check ) gdcmWarningMacro( "tiny offset detected in between RLE segments" );
+    //assert( check == 0 || check == 1 || check == 2 );
+    if( check ) gdcmDebugMacro( "tiny offset detected in between RLE segments: " << check );
     }
   else
     {
@@ -626,24 +619,37 @@ bool RLECodec::Decode(DataElement const &in, DataElement &out)
     out = in;
     const SequenceOfFragments *sf = in.GetSequenceOfFragments();
     if( !sf ) return false;
-    unsigned long len = GetBufferLength();
-    char *buffer = new char[len];
+    const unsigned long len = GetBufferLength();
     unsigned long pos = 0;
     // Each RLE Frame store a 2D frame. len is the 3d length
-    unsigned long llen = len / sf->GetNumberOfFragments();
+    const size_t nframes = sf->GetNumberOfFragments();
+    const size_t zdim = Dimensions[2];
+    if( nframes != zdim )
+    {
+      gdcmErrorMacro( "Invalid number of fragments: " << nframes << " should be: " << zdim  );
+      return false;
+    }
+    char *buffer = new char[len];
+    const std::size_t llen = len / nframes;
     // assert( GetNumberOfDimensions() == 2
     //      || GetDimension(2) == sf->GetNumberOfFragments() );
-    for(unsigned int i = 0; i < sf->GetNumberOfFragments(); ++i)
+    bool corruption = false;
+    for(unsigned int i = 0; i < nframes; ++i)
       {
       const Fragment &frag = sf->GetFragment(i);
       const size_t check = DecodeFragment(frag, buffer + pos, llen); (void)check;
-      assert( check == llen );
-      pos += llen;
+      if( check != llen )
+      {
+        gdcmDebugMacro( "RLE pb with frag: " << i );
+        corruption = true;
       }
-    assert( pos == len );
+      pos += (unsigned long)llen;
+      }
+    if( !corruption )
+      assert( pos == len );
     out.SetByteValue( buffer, (uint32_t)len );
     delete[] buffer;
-    return true;
+    return !corruption;
     }
   return false;
 }
@@ -687,13 +693,13 @@ bool RLECodec::DecodeExtent(
 
     // handle DICOM padding
     std::streampos end = is.tellg();
-    size_t numberOfReadBytes = end - start;
+    size_t numberOfReadBytes = (size_t)(end - start);
     if( numberOfReadBytes > frag.GetVL() )
       {
       // Special handling for ALOKA_SSD-8-MONO2-RLE-SQ.dcm
       size_t diff = numberOfReadBytes - frag.GetVL();
       assert( diff == 1 );
-      os.seekp( -diff, std::ios::cur );
+      os.seekp( 0 - (int)diff, std::ios::cur );
       os.put( 0 );
       end = (size_t)end - 1;
       }
@@ -791,7 +797,7 @@ bool RLECodec::DecodeByStreams(std::istream &is, std::ostream &os)
       //   " when it should says: " << pos << std::endl );
       std::streamoff check = frame.Header.Offset[i] - pos;//should it be a streampos or a uint32? mmr
       // check == 2 for gdcmDataExtra/gdcmSampleData/US_DataSet/GE_US/2929J686-breaker
-      assert( check == 1 || check == 2);
+      //assert( check == 1 || check == 2);
       (void)check; //warning removal
       is.seekg( frame.Header.Offset[i] + start, std::ios::beg );
       }
@@ -804,7 +810,11 @@ bool RLECodec::DecodeByStreams(std::istream &is, std::ostream &os)
     while( numOutBytes < length )
       {
       is.read((char*)&byte, 1);
-      assert( is.good() );
+      if( !is.good() )
+      {
+        gdcmErrorMacro( "Could not decode" );
+        return false;
+      }
       numberOfReadBytes++;
       if( byte >= 0 /*&& byte <= 127*/ ) /* 2nd is always true */
         {
@@ -903,6 +913,7 @@ private:
 
 bool RLECodec::AppendRowEncode( std::ostream & os, const char * data, size_t datalen)
 {
+  (void)os; (void)data; (void)datalen;
   assert(0);
   return false;
 }

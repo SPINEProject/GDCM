@@ -74,10 +74,17 @@ struct FImpl
     }
 };
 
+// http://stackoverflow.com/questions/485525/round-for-float-in-c
+// http://en.cppreference.com/w/c/numeric/math/round
 template < typename T >
-static inline T round(const double d)
+static inline T round_impl(const double d)
 {
-  return (T)floor(d + 0.5);
+#ifdef GDCM_HAVE_LROUND
+  // round() is C99, std::round() is C++11
+  return (T)lround(d);
+#else
+  return (T)((d > 0.0) ? floor(d + 0.5) : ceil(d - 0.5));
+#endif
 }
 
 template<typename TOut>
@@ -93,7 +100,7 @@ struct FImpl<TOut, float>
       // well known trick of adding 0.5 after a floating point type operation to properly find the
       // closest integer that will represent the transformation
       // TOut in this case is integer type, while input is floating point type
-      out[i] = round<TOut>(((double)in[i] - intercept) / slope);
+      out[i] = round_impl<TOut>(((double)in[i] - intercept) / slope);
       //assert( out[i] == (TOut)(((double)in[i] - intercept) / slope ) );
       }
     }
@@ -111,7 +118,7 @@ struct FImpl<TOut, double>
       // well known trick of adding 0.5 after a floating point type operation to properly find the
       // closest integer that will represent the transformation
       // TOut in this case is integer type, while input is floating point type
-      out[i] = round<TOut>(((double)in[i] - intercept) / slope);
+      out[i] = round_impl<TOut>(((double)in[i] - intercept) / slope);
       //assert( out[i] == (TOut)(((double)in[i] - intercept) / slope ) );
       }
     }
@@ -384,7 +391,7 @@ bool Rescaler::Rescale(char *out, const char *in, size_t n)
   return true;
 }
 
-PixelFormat ComputeInverseBestFitFromMinMax(/*const PixelFormat &pf,*/ double intercept, double slope, double _min, double _max)
+static PixelFormat ComputeInverseBestFitFromMinMax(/*const PixelFormat &pf,*/ double intercept, double slope, double _min, double _max)
 {
   PixelFormat st = PixelFormat::UNKNOWN;
   //assert( slope == (int)slope && intercept == (int)intercept);
@@ -403,7 +410,6 @@ PixelFormat ComputeInverseBestFitFromMinMax(/*const PixelFormat &pf,*/ double in
   int64_t min = (int64_t)dmin;
   int64_t max = (int64_t)dmax;
 
-  int log2min = 0;
   int log2max = 0;
 
   if( min >= 0 ) // unsigned
@@ -422,7 +428,7 @@ PixelFormat ComputeInverseBestFitFromMinMax(/*const PixelFormat &pf,*/ double in
       }
     else
       {
-      assert(0);
+      gdcmAssertAlwaysMacro(0);
       }
     int64_t max2 = max; // make a copy
     while (max2 >>= 1) ++log2max;
@@ -448,14 +454,21 @@ PixelFormat ComputeInverseBestFitFromMinMax(/*const PixelFormat &pf,*/ double in
       }
     else
       {
-      assert(0);
+      gdcmAssertAlwaysMacro(0);
       }
     assert( min < 0 );
+#if 0
+    int log2min = 0;
     int64_t min2 = -min; // make a copy
     int64_t max2 = max; // make a copy
     while (min2 >>= 1) ++log2min;
     while (max2 >>= 1) ++log2max;
-    const int64_t bs = std::max( log2min, log2max ) + 1;
+    const int64_t bs = std::max( log2min, log2max ) + 1 + 1 /* 2 complement */;
+#else
+    int64_t max2 = max - min; // make a copy
+    while (max2 >>= 1) ++log2max;
+    const int64_t bs = log2max + 1;
+#endif
     assert( bs <= st.GetBitsAllocated() );
     st.SetBitsStored( (unsigned short)bs );
     }

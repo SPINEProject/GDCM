@@ -21,7 +21,7 @@
 //
 // $ find   /images/ -type f -exec dcmdump -s +P 0010,0010 {} \;
 
-int TestScannerExtra()
+static int TestScannerExtra()
 {
   const char *extradataroot = gdcm::Testing::GetDataExtraRoot();
   if( !extradataroot )

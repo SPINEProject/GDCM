@@ -32,8 +32,14 @@
 #endif
 
 
-namespace gdcm
+namespace gdcm_ns
 {
+
+Reader::Reader():F(new File)
+{
+  Stream = NULL;
+  Ifstream = NULL;
+}
 
 Reader::~Reader()
 {
@@ -198,20 +204,17 @@ namespace details
   class DefaultCaller
   {
   private:
-    gdcm::DataSet & m_dataSet;
-	std::streampos & m_posDataSet ;
+    DataSet & m_dataSet;
   public:
-    DefaultCaller(gdcm::DataSet &ds, std::streampos & posDataSet): m_dataSet(ds),m_posDataSet(posDataSet){}
+    DefaultCaller(DataSet &ds): m_dataSet(ds){}
     template<class T1, class T2>
       void ReadCommon(std::istream & is) const
         {
-		m_posDataSet = is.tellg();
         m_dataSet.template Read<T1,T2>(is);
         }
     template<class T1, class T2>
       void ReadCommonWithLength(std::istream & is, VL & length) const
         {
-		m_posDataSet = is.tellg();
         m_dataSet.template ReadWithLength<T1,T2>(is,length);
         // manually set eofbit:
         // https://groups.google.com/forum/?fromgroups#!topic/comp.lang.c++/yTW4ESh1IL8
@@ -227,27 +230,24 @@ namespace details
   class ReadUpToTagCaller
   {
   private:
-    gdcm::DataSet & m_dataSet;
-    const gdcm::Tag & m_tag;
-    std::set<gdcm::Tag> const & m_skipTags;
-	std::streampos & m_posDataSet ;
+    DataSet & m_dataSet;
+    const Tag & m_tag;
+    std::set<Tag> const & m_skipTags;
   public:
-    ReadUpToTagCaller(gdcm::DataSet &ds,const gdcm::Tag & tag, std::set<gdcm::Tag> const & skiptags, std::streampos & posDataSet)
+    ReadUpToTagCaller(DataSet &ds,const Tag & tag, std::set<Tag> const & skiptags)
     :
-    m_dataSet(ds),m_tag(tag),m_skipTags(skiptags),m_posDataSet(posDataSet)
+    m_dataSet(ds),m_tag(tag),m_skipTags(skiptags)
     {
     }
 
     template<class T1, class T2>
       void ReadCommon(std::istream & is) const
         {
-		m_posDataSet = is.tellg();
         m_dataSet.template ReadUpToTag<T1,T2>(is,m_tag,m_skipTags);
         }
     template<class T1, class T2>
       void ReadCommonWithLength(std::istream & is, VL & length) const
         {
-		m_posDataSet = is.tellg();
         m_dataSet.template ReadUpToTagWithLength<T1,T2>(is,m_tag,m_skipTags,length);
         }
     static void Check(bool , std::istream &)  {}
@@ -259,24 +259,21 @@ namespace details
     DataSet & m_dataSet;
     std::set<Tag> const & m_tags;
     bool m_readvalues;
-	std::streampos & m_posDataSet ;
   public:
-    ReadSelectedTagsCaller(DataSet &ds, std::set<Tag> const & tags, const bool readvalues, std::streampos & posDataSet)
+    ReadSelectedTagsCaller(DataSet &ds, std::set<Tag> const & tags, const bool readvalues)
       :
-    m_dataSet(ds),m_tags(tags),m_readvalues(readvalues),m_posDataSet(posDataSet)
+    m_dataSet(ds),m_tags(tags),m_readvalues(readvalues)
     {
     }
 
     template<class T1, class T2>
     void ReadCommon(std::istream & is) const
     {
-	  m_posDataSet = is.tellg();
       m_dataSet.template ReadSelectedTags<T1,T2>(is,m_tags,m_readvalues);
     }
     template<class T1, class T2>
     void ReadCommonWithLength(std::istream & is, VL & length) const
     {
-	  m_posDataSet = is.tellg();
       m_dataSet.template ReadSelectedTagsWithLength<T1,T2>(is,m_tags,length,m_readvalues);
     }
     static void Check(bool , std::istream &)  {}
@@ -311,19 +308,19 @@ namespace details
 
 bool Reader::Read()
 {
-  details::DefaultCaller caller(F->GetDataSet(), m_posDataSet);
+  details::DefaultCaller caller(F->GetDataSet());
   return InternalReadCommon(caller);
 }
 
 bool Reader::ReadUpToTag(const Tag & tag, std::set<Tag> const & skiptags)
 {
-  details::ReadUpToTagCaller caller(F->GetDataSet(),tag,skiptags, m_posDataSet);
+  details::ReadUpToTagCaller caller(F->GetDataSet(),tag,skiptags);
   return InternalReadCommon(caller);
 }
 
 bool Reader::ReadSelectedTags( std::set<Tag> const & selectedTags, bool readvalues )
 {
-  details::ReadSelectedTagsCaller caller(F->GetDataSet(), selectedTags, readvalues, m_posDataSet);
+  details::ReadSelectedTagsCaller caller(F->GetDataSet(), selectedTags,readvalues);
   return InternalReadCommon(caller);
 }
 
@@ -423,17 +420,11 @@ bool Reader::InternalReadCommon(const T_Caller &caller)
       throw Exception( "Meta Header issue" );
       }
 
-  //std::cerr << ts.GetNegociatedType() << std::endl;
-  //std::cerr << TransferSyntax::GetTSString(ts) << std::endl;
   // Special case where the dataset was compressed using the deflate
   // algorithm
   if( ts == TransferSyntax::DeflatedExplicitVRLittleEndian )
     {
-#if 0
-  std::ofstream out( "/tmp/deflate.raw", std::ios::binary );
-  out << is.rdbuf();
-  out.close();
-#endif
+
     zlib_stream::zip_istream gzis( is );
     // FIXME: we also know in this case that we are dealing with Explicit:
     assert( ts.GetNegociatedType() == TransferSyntax::Explicit );
@@ -642,30 +633,6 @@ bool Reader::InternalReadCommon(const T_Caller &caller)
             // ExplicitImplicitDataElement class instead.
             // Simply rethrow the exception for now.
             throw;
-#if 0
-            is.clear();
-            if( haspreamble )
-              {
-              is.seekg(128+4, std::ios::beg);
-              }
-            else
-              {
-              is.seekg(0, std::ios::beg);
-              }
-            if( hasmetaheader )
-              {
-              // FIXME: we are reading twice the same meta-header, we succedeed the first time...
-              // We should be able to seek to proper place instead of re-reading
-              FileMetaInformation header;
-              header.Read(is);
-              }
-
-            // Explicit/Implicit
-            gdcmWarningMacro( "Attempt to read file with explicit/implicit" );
-            F->GetDataSet().Clear(); // remove garbage from 1st attempt...
-            //F->GetDataSet().template Read<UNExplicitImplicitDataElement,SwapperNoOp>(is);
-            caller.template ReadCommon<UNExplicitImplicitDataElement,SwapperNoOp>(is);
-#endif
             }
           }
         }
@@ -707,7 +674,7 @@ bool Reader::InternalReadCommon(const T_Caller &caller)
         }
       }
 #else
-    gdcmDebugMacro( ex.what() );
+    gdcmDebugMacro( ex.what() ); (void)ex;
     success = false;
 #endif /* GDCM_SUPPORT_BROKEN_IMPLEMENTATION */
     }
@@ -737,11 +704,6 @@ bool Reader::InternalReadCommon(const T_Caller &caller)
     gdcmWarningMacro( "Unknown exception" );
     success = false;
     }
-  //  if( !success )
-  //    {
-  //    F->GetHeader().Clear();
-  //    F->GetDataSet().Clear();
-  //    }
 
   // FIXME : call this function twice...
   if (Ifstream && Ifstream->is_open())
@@ -783,8 +745,6 @@ bool Reader::CanRead() const
   bool bigendian = false;
   bool explicitvr = false;
   is.clear();
-  //is.seekg(0, std::ios::end);
-  //std::streampos filelen = is.tellg();
   is.seekg(0, std::ios::beg);
 
   char b[8];
@@ -846,137 +806,6 @@ bool Reader::CanRead() const
       nts = TransferSyntax::Implicit;
     }
 
-#if 0
-  is.clear();
-  is.seekg(0, std::ios::end);
-  std::streampos filelen = is.tellg();
-  is.seekg(0, std::ios::beg);
-  Tag t;
-  VL gl; // group length
-  if( bigendian )
-    {
-    if( !t.Read<SwapperDoOp>(is) )
-      {
-      is.clear();
-      is.seekg(0, std::ios::beg);
-      return false;
-      }
-    }
-  else
-    {
-    if( !t.Read<SwapperNoOp>(is) )
-      {
-      is.clear();
-      is.seekg(0, std::ios::beg);
-      return false;
-      }
-    }
-  if( t.GetGroup() % 2 == 0 )
-    {
-    switch( t.GetGroup() )
-      {
-    case 0x0002:
-    //case 0x0004: // DICOMDIR is for media, thus FMI is compulsory
-    case 0x0008:
-      sc = SwapCode::LittleEndian;
-      break;
-    //case 0x0200: // FMI is Explicit VR Little Endian...
-    case 0x0800:
-      sc = SwapCode::BigEndian;
-      break;
-    default:
-      ;
-      }
-    if( sc != SwapCode::Unknown )
-      {
-      // Purposely not Re-use ReadVR since we can read VR_END
-      char vr_str[3];
-      is.read(vr_str, 2);
-      vr_str[2] = '\0';
-      // Cannot use GetVRTypeFromFile since is assert ...
-      VR::VRType vr = VR::GetVRType(vr_str);
-      if( vr != VR::VR_END )
-        {
-        nts = TransferSyntax::Explicit;
-        }
-      else
-        {
-        assert( !(VR::IsSwap(vr_str)));
-        is.seekg(-2, std::ios::cur); // Seek back
-        gl.Read<SwapperNoOp>(is);
-
-        if( t.GetElement() == 0x0000 )
-          {
-          switch(gl)
-            {
-          case 0x00000004 :
-            assert( sc == SwapCode::LittleEndian);    // 1234
-            sc = SwapCode::LittleEndian;    // 1234
-            break;
-          case 0x04000000 :
-            assert( sc == SwapCode::BigEndian);    // 1234
-            sc = SwapCode::BigEndian;       // 4321
-            break;
-          case 0x00040000 :
-            sc = SwapCode::BadLittleEndian; // 3412
-            gdcmWarningMacro( "Bad Little Endian" );
-            break;
-          case 0x00000400 :
-            sc = SwapCode::BadBigEndian;    // 2143
-            gdcmWarningMacro( "Bad Big Endian" );
-            break;
-          default:
-            ;
-            }
-          }
-        if( gl && gl < filelen )
-          nts = TransferSyntax::Implicit;
-        }
-      }
-    }
-  else
-    {
-    // US-IRAD-NoPreambleStartWith0003.dcm
-    gdcmDebugMacro( "Start with a private tag creator" );
-    if( t.GetGroup() > 0x0002 && t.GetGroup() < 0x8 )
-      {
-      switch( t.GetElement() )
-        {
-      case 0x0010:
-        sc = SwapCode::LittleEndian;
-        break;
-      default:
-        ;
-        }
-      }
-    if( sc != SwapCode::Unknown )
-      {
-      // Purposely not Re-use ReadVR since we can read VR_END
-      char vr_str[3];
-      is.read(vr_str, 2);
-      vr_str[2] = '\0';
-      // Cannot use GetVRTypeFromFile since is assert ...
-      VR::VRType vr = VR::GetVRType(vr_str);
-      if( vr != VR::VR_END )
-        {
-        nts = TransferSyntax::Explicit;
-        }
-      else
-        {
-        assert( !(VR::IsSwap(vr_str)));
-        is.seekg(-2, std::ios::cur); // Seek back
-        gl.Read<SwapperNoOp>(is);
-        if( t.GetElement() == 0x0000 )
-          {
-          assert( gl == 0x4 || gl == 0x04000000 );
-          }
-        if( gl && gl < filelen )
-          nts = TransferSyntax::Implicit;
-        }
-      }
-    }
-
-#endif
   // reset in all other cases:
   is.clear();
   is.seekg(0, std::ios::beg);
@@ -986,16 +815,6 @@ bool Reader::CanRead() const
   if( nts == TransferSyntax::Implicit && sc == SwapCode::BigEndian ) return false;
   if( nts == TransferSyntax::Explicit && sc == SwapCode::LittleEndian ) return true;
   if( nts == TransferSyntax::Explicit && sc == SwapCode::BigEndian ) return true;
-
-//  assert( nts == TransferSyntax::Unknown );
-//  if( sc != SwapCode::Unknown )
-//    {
-//    gdcm::Reader r;
-//    r.SetStream( is );
-//    is.clear();
-//    is.seekg(0, std::ios::beg);
-//    return r.Read();
-//    }
 
   return false;
 }
@@ -1020,8 +839,8 @@ void Reader::SetFileName(const char *filename)
 
 size_t Reader::GetStreamCurrentPosition() const
 {
-  return GetStreamPtr()->tellg();
+  return static_cast<size_t>(GetStreamPtr()->tellg());
 }
 
 
-} // end namespace gdcm
+} // end namespace gdcm_ns

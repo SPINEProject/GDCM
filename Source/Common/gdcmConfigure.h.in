@@ -120,7 +120,9 @@
 #cmakedefine GDCM_HAVE__STRICMP
 #cmakedefine GDCM_HAVE__STRNICMP
 #cmakedefine GDCM_HAVE__SNPRINTF
+#cmakedefine GDCM_HAVE_LROUND
 #cmakedefine GDCM_HAVE_GETTIMEOFDAY
+#cmakedefine GDCM_HAVE_JSON_OBJECT_OBJECT_GET_EX
 
 // MM: I have a feeling that if GDCM_HAVE_WCHAR_IFSTREAM, then UNICODE filename
 // are expected to be specified as UTF-16, but if no API exist for UTF-16
@@ -130,10 +132,15 @@
 
 #cmakedefine GDCM_FORCE_BIGENDIAN_EMULATION
 
+#ifndef GDCM_OVERRIDE_BROKEN_IMPLEMENTATION
 /* To Remove code that support broken DICOM implementation and therefore
  * add some over head. Turn Off at your own risk
  */
 #cmakedefine GDCM_SUPPORT_BROKEN_IMPLEMENTATION
+#endif
+#ifndef gdcm_ns
+#define gdcm_ns gdcm
+#endif
 
 #define GDCM_PVRG_JPEG_EXECUTABLE "@PVRGJPEG_EXECUTABLE@"
 #define GDCM_KAKADU_EXPAND_EXECUTABLE "@KDU_EXPAND_EXECUTABLE@"

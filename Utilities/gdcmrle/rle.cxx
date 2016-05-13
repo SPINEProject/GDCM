@@ -16,6 +16,7 @@
 #include "io.h"
 
 #include <vector>
+#include <algorithm> // req C++11
 #include <cstring> // memcpy
 #include <cassert>
 #include <stdint.h> // uint32_t
@@ -42,7 +43,7 @@ struct rle_encoder::internal
   // when writing, need to keep updating offsets:
   header::ul comp_pos[16];
 
-  // internal buffer mecanism:
+  // internal buffer mechanism:
   std::vector<char> invalues;
   std::vector<char> outvalues;
 };
@@ -338,7 +339,7 @@ struct rle_decoder::internal
   source ** sources;
   int nsources;
 
-  // scanline buffering mecanism:
+  // scanline buffering mechanism:
   std::vector<char> scanline;
 
   // row crossing handling. some RLE encoder are brain dead and do cross the

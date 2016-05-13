@@ -254,7 +254,7 @@ void DoIconImage(const DataSet& rootds, Pixmap& image)
       pi = PhotometricInterpretation::GetPIType(
         photometricinterpretation_str.c_str());
       }
-    assert( pi != PhotometricInterpretation::UNKNOW);
+    assert( pi != PhotometricInterpretation::UNKNOWN);
     pixeldata.SetPhotometricInterpretation( pi );
 
     //
@@ -307,7 +307,7 @@ void DoIconImage(const DataSet& rootds, Pixmap& image)
           unsigned long check =
             (el_us3.GetValue(0) ? el_us3.GetValue(0) : 65536)
             * el_us3.GetValue(2) / 8;
-          assert( check == lut_raw->GetLength()
+          assert( check == lut_raw->GetLength() || 2 * check == lut_raw->GetLength()
             || check + 1 == lut_raw->GetLength() ); (void)check;
           }
         else if( ds.FindDataElement( seglut ) )
@@ -494,11 +494,12 @@ unsigned int GetNumberOfOverlaysInternal(DataSet const & ds, std::vector<uint16_
 
 bool DoOverlays(const DataSet& ds, Pixmap& pixeldata)
 {
-  bool updateoverlayinfo = false;
   unsigned int numoverlays;
   std::vector<uint16_t> overlaylist;
+  std::vector<bool> updateoverlayinfo;
   if( (numoverlays = GetNumberOfOverlaysInternal( ds, overlaylist )) )
     {
+    updateoverlayinfo.resize(numoverlays, false);
     pixeldata.SetNumberOfOverlays( numoverlays );
 
     for( unsigned int idxoverlays = 0; idxoverlays < numoverlays; ++idxoverlays )
@@ -546,10 +547,10 @@ bool DoOverlays(const DataSet& ds, Pixmap& pixeldata)
 
         if( !ov.GrabOverlayFromPixelData(ds) )
           {
-          gdcmErrorMacro( "Could not extract Overlay from Pixel Data" );
+          gdcmWarningMacro( "Could not extract Overlay from Pixel Data" );
           //throw Exception("TODO: Could not extract Overlay Data");
           }
-        updateoverlayinfo = true;
+        updateoverlayinfo[idxoverlays] = true;
         }
       }
     //std::cout << "Num of Overlays: " << numoverlays << std::endl;
@@ -569,14 +570,15 @@ bool DoOverlays(const DataSet& ds, Pixmap& pixeldata)
       if( obp < pf.GetBitsStored() )
         {
         pixeldata.RemoveOverlay( ov );
-        gdcmWarningMacro( "Invalid BitPosition: " << obp << " for overlay #" << ov << " removing it." );
+        updateoverlayinfo.erase( updateoverlayinfo.begin() + ov );
+        gdcmWarningMacro( "Invalid BitPosition: " << obp << " for overlay #" <<
+          ov << " removing it." );
         }
       }
     }
 
-  if( updateoverlayinfo )
-    {
-    for( size_t ov = 0; ov < pixeldata.GetNumberOfOverlays(); ++ov )
+    for( size_t ov = 0;
+      ov < pixeldata.GetNumberOfOverlays() && updateoverlayinfo[ov] ; ++ov )
       {
       Overlay& o = pixeldata.GetOverlay(ov);
       // We need to update information
@@ -587,11 +589,10 @@ bool DoOverlays(const DataSet& ds, Pixmap& pixeldata)
         }
       else
         {
-        gdcmErrorMacro( "Overlay is not supported" );
+        gdcmErrorMacro( "Overlay #" << ov << " is not supported" );
         return false;
         }
       }
-    }
 
   return true;
 }
@@ -713,7 +714,7 @@ bool PixmapReader::ReadImageInternal(MediaStorage const &ms, bool handlepixeldat
   const Tag tphotometricinterpretation(0x0028, 0x0004);
   const ByteValue *photometricinterpretation
     = ImageHelper::GetPointerFromElement( tphotometricinterpretation, *F );
-  PhotometricInterpretation pi = PhotometricInterpretation::UNKNOW;
+  PhotometricInterpretation pi = PhotometricInterpretation::UNKNOWN;
   if( photometricinterpretation )
     {
     std::string photometricinterpretation_str(
@@ -755,14 +756,14 @@ bool PixmapReader::ReadImageInternal(MediaStorage const &ms, bool handlepixeldat
   assert( pi != PhotometricInterpretation::PI_END );
   if( !pf.GetSamplesPerPixel() || (pi.GetSamplesPerPixel() != pf.GetSamplesPerPixel()) )
     {
-    if( pi != PhotometricInterpretation::UNKNOW )
+    if( pi != PhotometricInterpretation::UNKNOWN )
       {
       pf.SetSamplesPerPixel( pi.GetSamplesPerPixel() );
       }
     else if ( isacrnema )
       {
       assert ( pf.GetSamplesPerPixel() == 0 );
-      assert ( pi == PhotometricInterpretation::UNKNOW );
+      assert ( pi == PhotometricInterpretation::UNKNOWN );
       pf.SetSamplesPerPixel( 1 );
       pi = PhotometricInterpretation::MONOCHROME2;
       }
@@ -782,7 +783,7 @@ bool PixmapReader::ReadImageInternal(MediaStorage const &ms, bool handlepixeldat
     {
     return false;
     }
-  if( pi == PhotometricInterpretation::UNKNOW ) return false;
+  if( pi == PhotometricInterpretation::UNKNOWN ) return false;
   PixelData->SetPhotometricInterpretation( pi );
 
   // 4. Planar Configuration
@@ -941,7 +942,7 @@ bool PixmapReader::ReadImageInternal(MediaStorage const &ms, bool handlepixeldat
         }
       else
         {
-        assert(0);
+        gdcmAssertAlwaysMacro(0);
         }
       }
     if( ! lut->Initialized() ) return false;
@@ -1012,7 +1013,7 @@ bool PixmapReader::ReadImageInternal(MediaStorage const &ms, bool handlepixeldat
         if( !sqf )
           {
           // TODO: It would be nice to recognize file such as JPEGDefinedLengthSequenceOfFragments.dcm
-          gdcmDebugMacro( "File is declared as JPEG compressed but does not contains Fragmens explicitly." );
+          gdcmDebugMacro( "File is declared as JPEG compressed but does not contains Fragments explicitly." );
           return false;
           }
         sqf->WriteBuffer( ss );
@@ -1062,12 +1063,15 @@ bool PixmapReader::ReadImageInternal(MediaStorage const &ms, bool handlepixeldat
     licat.SetFromDataSet( ds ); // could be empty
     const CSComp & v = licat.GetValue();
     lossyflag = atoi( v.c_str() ) == 1;
+    // Note: technically one can decompress into uncompressed form (eg.
+    // Implicit Little Endian) an input JPEG Lossy. So we need to check
+    // the attribute LossyImageCompression value:
     PixelData->SetLossyFlag(lossyflag);
     }
 
   // Two cases:
   // - DataSet did not specify the lossyflag
-  // - DataSet specify it to be 0, but there is still a change it could be wrong:
+  // - DataSet specify it to be 0, but there is still a chance it could be wrong:
   if( !haslossyflag || !lossyflag )
     {
     PixelData->ComputeLossyFlag();
