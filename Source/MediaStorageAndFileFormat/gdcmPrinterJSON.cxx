@@ -485,7 +485,10 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
 {
   const ByteValue *bv = de.GetByteValue();
   const SequenceOfItems *sqi = 0; //de.GetSequenceOfItems();
-  const Value &value = de.GetValue();
+  //std::cout << "\n bytevalue: " << bv << std::endl;
+  //printf("here30");
+  //const Value &value = de.GetValue();
+  //printf("here31");
   const SequenceOfFragments *sqf = de.GetSequenceOfFragments();
 
   std::string strowner;
@@ -543,6 +546,9 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
   assert( refvr != VR::US_SS );
   assert( refvr != VR::OB_OW );
 
+  if( !de.IsEmpty() )
+  {
+  const Value &value = de.GetValue();
   if( dynamic_cast<const SequenceOfItems*>( &value ) )
     {
     sqi = de.GetValueAsSQ();
@@ -557,6 +563,7 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
     assert( refvr == VR::SQ );
     }
 #endif
+  }
 
   if( (vr_read == VR::INVALID || vr_read == VR::UN ) && vl_read.IsUndefined() )
     {
@@ -605,7 +612,7 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
     else
       {
       assert( de.IsEmpty() );
-      os << "\"(no value)\"";
+      os << "null";
       }
     }
   else
@@ -665,7 +672,7 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
           {
           assert( !sqi && !sqf );
           assert( de.IsEmpty() );
-          os << GDCM_TERMINAL_VT100_INVERSE << "\"(no value)\"" << GDCM_TERMINAL_VT100_NORMAL;
+          os << GDCM_TERMINAL_VT100_INVERSE << "null" << GDCM_TERMINAL_VT100_NORMAL;
           }
         }
       break;
@@ -715,7 +722,7 @@ VR PrinterJSON::PrintDataElement(std::ostringstream &os, const Dicts &dicts, con
             bv->PrintASCIIJSON(os);
             }
         }else{
-            os<<"\"(no value)\"";
+            os<<"null";
         }
         }
       break;
@@ -775,9 +782,9 @@ void PrinterJSON::PrintDataSet(const DataSet &ds, std::ostream &out, std::string
     const SequenceOfFragments *sqf = de.GetSequenceOfFragments();
 
     std::ostringstream os;
-
+    //printf("here20");
     VR refvr = PrintDataElement(os, dicts, ds, de, out, indent);
-
+    //printf("here21");
     if( refvr == VR::SQ /*|| sqi*/ )
       {
       //SmartPointer<SequenceOfItems> sqi2 = DataSetHelper::ComputeSQFromByteValue( *F, ds, de.GetTag() );
@@ -860,14 +867,14 @@ void PrinterJSON::Print(std::ostream& os)
   //os << "# Dicom-File-Format\n";
   //os << "\n";
   //os << "# Dicom-Meta-Information-Header\n";
-  //os << "# Used TransferSyntax: \n";
-
+  //os << "# Used TransferSyntax: \n"; 
+  try {
     os<<"{\n";
   const FileMetaInformation &meta = F->GetHeader();
   if( PrintStyle == VERBOSE_STYLE )
-    PrintDataSet(meta, os);
+    {PrintDataSet(meta, os);}
   else if (PrintStyle == CONDENSED_STYLE )
-    DumpDataSetJSON(meta, os);
+    {DumpDataSetJSON(meta, os);}
 
   if(meta.Begin() != meta.End()){
     os<<",\n";
@@ -879,10 +886,14 @@ void PrinterJSON::Print(std::ostream& os)
   //os << std::endl;
   const DataSet &ds = F->GetDataSet();
   if( PrintStyle == VERBOSE_STYLE )
-    PrintDataSet(ds, os);
+    {PrintDataSet(ds, os);}
   else if (PrintStyle == CONDENSED_STYLE )
-    DumpDataSetJSON(ds, os);
+    {DumpDataSetJSON(ds, os);}
   os<<"}\n";
+  }
+  catch(...) {
+    std::cerr << "Problem in Print" << std::endl;
+  }
 }
 
 }

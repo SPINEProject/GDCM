@@ -1000,7 +1000,7 @@ int main (int argc, char *argv[])
       break;
 
     case 'p':
-      //printf ("option p with value '%s'\n", optarg);
+      printf ("option p with value '%s'\n", optarg);
       print = 1;
       break;
 
@@ -1223,6 +1223,7 @@ int main (int argc, char *argv[])
       }
     else
       {
+      //printf ("Printer JSON selected '%s'\n", optarg);
       res += DoOperation<gdcm::PrinterJSON>(filename);
       }
     // ...
