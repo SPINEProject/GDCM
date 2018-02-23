@@ -1,3 +1,6 @@
+## SPINE BUILD
+- Swith option ```GDCM_BUILD_APPLICATIONS``` to ```ON```
+
 This is the source code of GDCM. It is available from sf.net website.
 Official GIT repository is at:
 
