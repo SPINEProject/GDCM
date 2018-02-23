@@ -193,7 +193,7 @@ private:
            << "\n\n";                                             \
    std::ostream &_os = gdcm::Trace::GetErrorStream();             \
    _os << osmacro.str() << std::endl;                             \
-   assert ( arg );                                                \
+   assert(arg);                                                \
    }                                                              \
 }
 #endif //NDEBUG

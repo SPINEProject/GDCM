@@ -1223,6 +1223,7 @@ int main (int argc, char *argv[])
       }
     else
       {
+      //printf ("Printer JSON selected '%s'\n", optarg);
       res += DoOperation<gdcm::PrinterJSON>(filename);
       }
     // ...

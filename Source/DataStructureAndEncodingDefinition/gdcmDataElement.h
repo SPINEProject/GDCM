@@ -13,7 +13,7 @@
 =========================================================================*/
 #ifndef GDCMDATAELEMENT_H
 #define GDCMDATAELEMENT_H
-
+  
 #include "gdcmTag.h"
 #include "gdcmVL.h"
 #include "gdcmVR.h"
@@ -91,7 +91,9 @@ public:
   }
 
   /// Set/Get Value (bytes array, SQ of items, SQ of fragments):
-  Value const &GetValue() const { gdcmAssertAlwaysMacro(ValueField); return *ValueField; }
+  Value const &GetValue() const { gdcmAssertAlwaysMacro(ValueField); 
+    //std::cerr << "ValueField: " << ValueField << std::endl;
+    return *ValueField; }
   Value &GetValue() { return *ValueField; }
   /// \warning you need to set the ValueLengthField explicitly
   void SetValue(Value const & vl) {
