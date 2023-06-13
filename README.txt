@@ -1,7 +1,11 @@
 ## SPINE BUILD
 
-# For SPINE 1.0
-- Swith option ```GDCM_BUILD_APPLICATIONS``` to ```ON```
+1. git clone https://github.com/SPINEProject/GDCM.git
+2. mkdir gdcmbin
+3. cd gdcmbin
+4. ccmake ../GDCM
+5. Press 'c' (configure)
+6. Press 'c' (configure) again, configure with the following values :
 
 # For SPINE 2.0
 # Options for ccmake
@@ -14,8 +18,18 @@
 - GDCM_WRAP_CSHARP                 OFF
 - GDCM_WRAP_JAVA                   OFF
 - GDCM_WRAP_PHP                    OFF
-- GDCM_WRAP_PYTHON                 ON
-- MSXSL_EXECUTABLE                 MSXSL_EXECUTABLE-NOTFOUND
+- GDCM_WRAP_PYTHON                 OFF
+- GDCM_BUILD_DOCBOOK_MANPAGES      OFF
+
+7. If success, option 'g' becomes available. Press 'g' (generate)
+8. make
+9. (suggested/optional) make install
+
+
+# For SPINE 1.0
+- Swith option ```GDCM_BUILD_APPLICATIONS``` to ```ON```
+
+
 
 This is the source code of GDCM. It is available from sf.net website.
 Official GIT repository is at:
