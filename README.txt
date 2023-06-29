@@ -32,6 +32,9 @@
 
 
 
+**For users working on Ubuntu 22.04 LTS with SPINE 2.0:** the parameter **MSXSL_EXECUTABLE** is not going to be detected by GDCM. 
+Furthermore, turn the **GDCM_BUILD_DOCBOOK_MANPAGES** param OFF in order to get a working generation step.  
+
 This is the source code of GDCM. It is available from sf.net website.
 Official GIT repository is at:
 
