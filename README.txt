@@ -1,4 +1,5 @@
 ## SPINE BUILD
+0. Install cmake and ccmake. For Ubuntu 22.04 run: `apt install cmake-curses-gui`
 
 1. git clone https://github.com/SPINEProject/GDCM.git
 2. mkdir gdcmbin
