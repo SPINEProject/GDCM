@@ -4,9 +4,10 @@
 1. git clone https://github.com/SPINEProject/GDCM.git
 2. mkdir gdcmbin
 3. cd gdcmbin
-4. ccmake ../GDCM
-5. Press 'c' (configure)
-6. Press 'c' (configure) again, configure with the following values :
+4. Install cmake (for Ubuntu sudo apt install cmake; sudo apt-get install cmake-curses-gui)
+5. ccmake ../GDCM
+6. Press 'c' (configure)
+7. Press 'c' (configure) again, configure with the following values :
 
 # For SPINE 2.0
 # Options for ccmake
